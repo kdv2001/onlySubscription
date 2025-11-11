@@ -31,3 +31,10 @@ go.work.sum
  .idea/
  .idea
 # .vscode/
+/.idea/.gitignore
+/.idea/modules.xml
+/.idea/onlySubscription.iml
+/.idea/vcs.xml
+
+local_values.json
+
