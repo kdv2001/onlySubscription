@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourcePerFileMappings">
+    <file url="file://$PROJECT_DIR$/internal/repositories/products/postgres/impl.go" value="014d0611-4e4d-4a2a-b72e-656d1d5c51af" />
+    <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/014d0611-4e4d-4a2a-b72e-656d1d5c51af/console.sql" value="014d0611-4e4d-4a2a-b72e-656d1d5c51af" />
+  </component>
+</project>

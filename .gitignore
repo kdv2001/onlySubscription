@@ -35,3 +35,6 @@ go.work.sum
 /.idea/modules.xml
 /.idea/onlySubscription.iml
 /.idea/vcs.xml
+
+local_values.json
+
