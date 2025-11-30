@@ -1,6 +1,8 @@
 package postgres
 
-var tables = []string{productsTable, sourcesTable, inventoryTable}
+var tables = []string{productsTable,
+	inventoryTable,
+	sourcesTable}
 
 var productsTable = `create table if not exists products (
                                           id                  uuid primary key,
@@ -26,7 +28,8 @@ var sourcesTable = `create table if not exists products_sources
     record_status text                        NOT NULL default ('')
 );`
 
-var inventoryTable = `create table if not exists subscription (
+var inventoryTable = `create table if not exists inventory
+(
     id          uuid primary key,
     product_id  uuid references products (id),
     status      text                        NOT NULL default ('sale'),

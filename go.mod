@@ -1,10 +1,13 @@
 module github.com/kdv2001/onlySubscription
 
-go 1.24
+go 1.24.0
+
+toolchain go1.24.6
 
 require go.uber.org/zap v1.27.0
 
 require (
+	github.com/go-faker/faker/v4 v4.7.0 // indirect
 	github.com/go-telegram/bot v1.17.0 // indirect
 	github.com/go-telegram/ui v0.5.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -16,6 +19,6 @@ require (
 	github.com/shopspring/decimal v1.4.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/crypto v0.37.0 // indirect
-	golang.org/x/sync v0.13.0 // indirect
-	golang.org/x/text v0.24.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 )

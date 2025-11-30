@@ -185,7 +185,7 @@ func (c *CustomError) Is(err error) bool {
 	var cErr *CustomError
 	ok := errors.As(err, &cErr)
 	if !ok {
-		return errors.Is(err, c.base)
+		return errors.Is(err, c.group)
 	}
 
 	return cErr.group == c.group && cErr.errType == c.errType

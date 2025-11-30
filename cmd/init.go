@@ -7,7 +7,7 @@ type configValues struct {
 	PostgresDSN   string `env:"DATABASE_DSN" json:"database_dsn"`
 }
 
-const configPath = "./deploy/local_values.json"
+const configPath = "./deploy/values.json"
 
 func initFlags() (*configValues, error) {
 	v := &configValues{}

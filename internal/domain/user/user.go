@@ -2,7 +2,6 @@ package user
 
 import (
 	"fmt"
-	"time"
 )
 
 type State string
@@ -28,6 +27,11 @@ func (id ID) String() string {
 	return id.ID
 }
 
+// IsEmpty возвращает признак пустого ID
+func (id ID) IsEmpty() bool {
+	return id.ID == ""
+}
+
 // NewID создает объект ID
 func NewID[T string | int | int64](i T) ID {
 	return ID{
@@ -35,24 +39,23 @@ func NewID[T string | int | int64](i T) ID {
 	}
 }
 
+// Auth авторизация
 type Auth struct {
 	UserID ID
 }
 
+// User пользователь
 type User struct {
+	// ID пользователя
 	ID ID
+	// Contact контактные данные
+	Contact Contact
 }
 
-type SessionInfo struct {
-	ID        ID
-	CreatedAt time.Time
-	UserID    ID
-	Device    string
-	// какая-то еще мета информация
-}
-
-type SessionToken struct {
-	Token string
+// Contact контакты
+type Contact struct {
+	// TelegramBotChatID ID телеграм чата
+	TelegramBotChatID int64
 }
 
 // TelegramID айди
@@ -75,4 +78,5 @@ func NewTelegramID[T string | int | int64](i T) TelegramID {
 // TelegramBotRegister авторизация через телеграм
 type TelegramBotRegister struct {
 	TelegramID TelegramID
+	ChatID     int64
 }

@@ -1,0 +1,1 @@
+- необходимо переименовать файл [example_values.json](example_values.json) в values.json и заполнить значения

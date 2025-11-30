@@ -6,16 +6,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kdv2001/onlySubscription/internal/domain/primitives"
 	domainProducts "github.com/kdv2001/onlySubscription/internal/domain/products"
 	custom_errors "github.com/kdv2001/onlySubscription/pkg/errors"
 )
 
 // maxProductsSize максимальное кол-во продуктов в ответе
-const maxProductsSize = 10
+const maxProductsSize = 15
+const maxProcessingItems = 15
 
 type productsRepo interface {
-	GetProducts(ctx context.Context, req primitives.RequestList) (domainProducts.Products, error)
+	GetProducts(ctx context.Context, req domainProducts.RequestList) (domainProducts.Products, error)
 	CreateProduct(ctx context.Context, req domainProducts.Product) (domainProducts.ID, error)
 	DeleteProduct(ctx context.Context, id domainProducts.ID) error
 	GetProduct(ctx context.Context, id domainProducts.ID) (domainProducts.Product, error)
@@ -29,7 +29,11 @@ type productsRepo interface {
 		changeItemStatus domainProducts.ChangeItemStatus,
 	) error
 	GetItem(ctx context.Context, id domainProducts.ItemID) (domainProducts.Item, error)
-	GetExpiredPreReservedItems(ctx context.Context, num int) ([]domainProducts.Item, error)
+	GetItems(
+		ctx context.Context,
+		req domainProducts.RequestList,
+	) ([]domainProducts.Item, error)
+	CountItemsForProduct(ctx context.Context, productID domainProducts.ID) (int64, error)
 }
 
 type Implementation struct {
@@ -44,8 +48,8 @@ func NewImplementation(productsRepo productsRepo) *Implementation {
 }
 
 // GetProducts возвращает набор продуктов
-func (i *Implementation) GetProducts(ctx context.Context, req primitives.RequestList) (domainProducts.Products, error) {
-	if req.Pagination.Num > maxProductsSize {
+func (i *Implementation) GetProducts(ctx context.Context, req domainProducts.RequestList) (domainProducts.Products, error) {
+	if req.Pagination != nil && req.Pagination.Num > maxProductsSize {
 		return nil, custom_errors.NewBadRequestError(errors.New("bad products num")).
 			SetDescription(fmt.Sprintf("request cards num grater than %d", maxProductsSize))
 	}
@@ -55,9 +59,26 @@ func (i *Implementation) GetProducts(ctx context.Context, req primitives.Request
 		return nil, err
 	}
 
+	if req.Filters != nil && req.Filters.ItemsExist {
+		result := make(domainProducts.Products, 0, len(res))
+		for _, r := range res {
+			num, err := i.productsRepo.CountItemsForProduct(ctx, r.ID)
+			if err != nil {
+				return nil, err
+			}
+			if num == 0 {
+				continue
+			}
+
+			result = append(result, r)
+		}
+		res = result
+	}
+
 	return res, nil
 }
 
+// GetProduct возвращает данные продукта
 func (i *Implementation) GetProduct(ctx context.Context, id domainProducts.ID) (domainProducts.Product, error) {
 	product, err := i.productsRepo.GetProduct(ctx, id)
 	if err != nil {
@@ -65,6 +86,16 @@ func (i *Implementation) GetProduct(ctx context.Context, id domainProducts.ID) (
 	}
 
 	return product, nil
+}
+
+// DeactivateProduct деактивирует продукт
+func (i *Implementation) DeactivateProduct(ctx context.Context, id domainProducts.ID) error {
+	err := i.productsRepo.DeleteProduct(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // CreateProduct возвращает набор продуктов
@@ -77,7 +108,8 @@ func (i *Implementation) CreateProduct(ctx context.Context, product domainProduc
 	return nil
 }
 
-func (i *Implementation) AddInventoryItem(ctx context.Context, item domainProducts.Item) error {
+// AddItem добавляет элемент в инвентарь
+func (i *Implementation) AddItem(ctx context.Context, item domainProducts.Item) error {
 	_, err := i.productsRepo.GetProduct(ctx, item.ProductID)
 	if err != nil {
 		return err
@@ -92,7 +124,8 @@ func (i *Implementation) AddInventoryItem(ctx context.Context, item domainProduc
 	return nil
 }
 
-func (i *Implementation) RemoveInventoryItem(ctx context.Context, id domainProducts.ItemID) error {
+// DeleteItem удаляет элемент
+func (i *Implementation) DeleteItem(ctx context.Context, id domainProducts.ItemID) error {
 	// Реализация удаления товара из инвентаря
 	err := i.productsRepo.DeleteInventoryItem(ctx, id)
 	if err != nil {
@@ -100,6 +133,31 @@ func (i *Implementation) RemoveInventoryItem(ctx context.Context, id domainProdu
 	}
 
 	return nil
+}
+
+// GetItem возвращает данные элемента инвентаря
+func (i *Implementation) GetItem(ctx context.Context, id domainProducts.ItemID) (domainProducts.Item, error) {
+	return i.productsRepo.GetItem(ctx, id)
+}
+
+// GetItems  возвращает элементы инвентаря
+func (i *Implementation) GetItems(ctx context.Context, req domainProducts.RequestList) ([]domainProducts.Item, error) {
+	if req.Pagination != nil && req.Pagination.Num > maxProductsSize {
+		return nil, custom_errors.NewBadRequestError(errors.New("bad products num")).
+			SetDescription(fmt.Sprintf("request cards num grater than %d", maxProductsSize))
+	}
+
+	availableStatuses := []domainProducts.ItemStatus{domainProducts.SaleStatus}
+	if req.Filters == nil {
+		req.Filters = &domainProducts.Filters{}
+	}
+	req.Filters.Statuses = availableStatuses
+
+	items, err := i.productsRepo.GetItems(ctx, req)
+	if err != nil {
+		return items, err
+	}
+	return items, nil
 }
 
 // PreReserveItem резервирует товар для заказа. Возвращает ID забронированного товара и ошибку, если произошла ошибка.
@@ -112,84 +170,42 @@ func (i *Implementation) PreReserveItem(ctx context.Context, productID domainPro
 	return reservedItemID, nil
 }
 
-func (i *Implementation) ReserveProduct(ctx context.Context, itemID domainProducts.ItemID) error {
-	err := i.productsRepo.ChangeItemStatus(ctx, itemID, domainProducts.ChangeItemStatus{
-		From: domainProducts.PreReservedStatus,
-		To:   domainProducts.ReservedStatus,
-	})
-	if err != nil {
-
-		return err
-	}
-
-	return nil
+// ReserveItem резервирует элемент инвентаря
+func (i *Implementation) ReserveItem(ctx context.Context, itemID domainProducts.ItemID) error {
+	return i.changeItemStatus(ctx, itemID, domainProducts.ReservedStatus)
 }
 
-func (i *Implementation) DereserveProduct(ctx context.Context, itemID domainProducts.ItemID) error {
-	err := i.productsRepo.ChangeItemStatus(ctx, itemID, domainProducts.ChangeItemStatus{
-		From: domainProducts.ReservedStatus,
-		To:   domainProducts.SaleStatus,
-	})
-	if err != nil {
-
-		return err
-	}
-
-	return nil
+// DereserveItem разрезервирует элемент инвентаря
+func (i *Implementation) DereserveItem(ctx context.Context, itemID domainProducts.ItemID) error {
+	return i.changeItemStatus(ctx, itemID, domainProducts.SaleStatus)
 }
 
-func (i *Implementation) SaleProduct(ctx context.Context, itemID domainProducts.ItemID) error {
-	err := i.productsRepo.ChangeItemStatus(ctx, itemID, domainProducts.ChangeItemStatus{
-		From: domainProducts.ReservedStatus,
-		To:   domainProducts.PerformedStatus,
-	})
+// PerformedItem переводит элемент инвентаря в исполнен
+func (i *Implementation) PerformedItem(ctx context.Context, itemID domainProducts.ItemID) error {
+	return i.changeItemStatus(ctx, itemID, domainProducts.PerformedStatus)
+}
+
+// changeItemStatus изменяет статус элемента инвентаря
+func (i *Implementation) changeItemStatus(ctx context.Context, itemID domainProducts.ItemID, toStatus domainProducts.ItemStatus) error {
+	item, err := i.productsRepo.GetItem(ctx, itemID)
 	if err != nil {
 		return err
 	}
 
-	return nil
-}
-
-func (i *Implementation) RunUpdateExpiredItems(ctx context.Context) error {
-	ticker := time.NewTicker(60 * time.Second)
-	for {
-		select {
-		case <-ctx.Done():
+	c, err := domainProducts.NewChangeItemStatus(item.Status, toStatus)
+	if err != nil {
+		if errors.Is(err, domainProducts.ErrStatusIsEqual) {
 			return nil
-		case <-ticker.C:
-			err := i.updateExpiredItems(ctx)
-			if err != nil {
-				return err
-			}
 		}
-	}
-}
 
-func (i *Implementation) updateExpiredItems(ctx context.Context) error {
-	// TODO добавить воркер пулл
-	items, err := i.productsRepo.GetExpiredPreReservedItems(ctx, 30)
-	if err != nil {
 		return err
 	}
 
-	for _, item := range items {
-		err = i.productsRepo.ChangeItemStatus(ctx, item.ID, domainProducts.ChangeItemStatus{
-			From: domainProducts.PreReservedStatus,
-			To:   domainProducts.SaleStatus,
-		})
-		if err != nil {
+	err = i.productsRepo.ChangeItemStatus(ctx, itemID, c)
+	if err != nil {
 
-			return err
-		}
+		return err
 	}
 
 	return nil
-}
-
-func (i *Implementation) CreateSubscription() error {
-	return nil
-}
-
-func (i *Implementation) GetItem(ctx context.Context, id domainProducts.ItemID) (domainProducts.Item, error) {
-	return i.productsRepo.GetItem(ctx, id)
 }

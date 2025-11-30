@@ -2,6 +2,7 @@ package price
 
 import "github.com/shopspring/decimal"
 
+// Currency Валюта
 type Currency string
 
 const (
@@ -12,15 +13,20 @@ const (
 	XTR Currency = "XTR"
 )
 
+// Price стоимость
 type Price struct {
+	// Currency валюта
 	Currency Currency
-	Value    decimal.Decimal
+	// Value денежное значение
+	Value decimal.Decimal
 }
 
+// String строковое представление
 func (c Currency) String() string {
 	return string(c)
 }
 
+// CurrencyFromString валюта из строки
 func CurrencyFromString(str string) Currency {
 	switch str {
 	case string(RUB):
