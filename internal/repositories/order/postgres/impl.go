@@ -19,36 +19,12 @@ import (
 	custom_errors "github.com/kdv2001/onlySubscription/pkg/errors"
 )
 
-var orderTable = `create table if not exists orders
-(
-    id           uuid primary key,
-    user_id      uuid                        NOT NULL,
-    order_status varchar                     NOT NULL,
-    created_at   timestamp WITHOUT TIME ZONE NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-    updated_at   timestamp WITHOUT TIME ZONE NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-    total_price  decimal                     not null,
-    currency     varchar                     not null,
-    product_id   uuid                        not null,
-	ttl  		 timestamp WITHOUT TIME ZONE NOT NULL 						 not null
-)`
-
 type Implementation struct {
 	c *pgxpool.Pool
 }
 
-var tables = []string{
-	orderTable,
-}
-
 // NewImplementation создает объект репо
-func NewImplementation(ctx context.Context, c *pgxpool.Pool) (*Implementation, error) {
-	for _, t := range tables {
-		_, err := c.Exec(ctx, t)
-		if err != nil {
-			return nil, nil
-		}
-	}
-
+func NewImplementation(c *pgxpool.Pool) (*Implementation, error) {
 	return &Implementation{
 		c: c,
 	}, nil

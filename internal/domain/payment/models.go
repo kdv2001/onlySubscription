@@ -1,11 +1,11 @@
-package order
+package payment
 
 import (
 	"errors"
 	"fmt"
 	"time"
 
-	order "github.com/kdv2001/onlySubscription/internal/domain/order"
+	"github.com/kdv2001/onlySubscription/internal/domain/order"
 	"github.com/kdv2001/onlySubscription/internal/domain/price"
 	"github.com/kdv2001/onlySubscription/internal/domain/primitives"
 	"github.com/kdv2001/onlySubscription/internal/domain/user"

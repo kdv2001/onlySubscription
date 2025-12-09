@@ -17,31 +17,11 @@ import (
 	custom_errors "github.com/kdv2001/onlySubscription/pkg/errors"
 )
 
-var productsTable = `create table if not exists products (
-    id                  uuid primary key,
-    user_id             uuid NOT NULL,
-    order_id            uuid NOT NULL unique,
-    description         text                        NOT NULL,
-    created_at          timestamp WITHOUT TIME ZONE NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-    updated_at          timestamp WITHOUT TIME ZONE NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-    state               text                        NOT NULL,
-	deadline          	timestamp WITHOUT TIME ZONE NOT NULL
-);`
-
 type Implementation struct {
 	conn *pgxpool.Pool
 }
 
-var tables = []string{productsTable}
-
-func NewImplementation(ctx context.Context, conn *pgxpool.Pool) (*Implementation, error) {
-	for _, t := range tables {
-		_, err := conn.Exec(ctx, t)
-		if err != nil {
-			return nil, err
-		}
-	}
-
+func NewImplementation(conn *pgxpool.Pool) (*Implementation, error) {
 	return &Implementation{
 		conn: conn,
 	}, nil

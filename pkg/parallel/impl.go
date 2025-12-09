@@ -2,12 +2,19 @@ package parallel
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/kdv2001/onlySubscription/pkg/logger"
 )
 
-func BackgroundPeriodProcess(ctx context.Context, dur time.Duration, fcn func(ctx context.Context) error) {
+func BackgroundPeriodProcess(ctx context.Context,
+	wg *sync.WaitGroup,
+	dur time.Duration,
+	fcn func(ctx context.Context) error) {
+	wg.Add(1)
+	defer wg.Done()
+
 	t := time.NewTicker(dur)
 	for {
 		select {

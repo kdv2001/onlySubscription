@@ -1,0 +1,10 @@
+SOURCE_DIR := migrations/postgres
+POSTGRES_URI ?= "postgresql://localhost/postgres?sslmode=disable"
+
+
+.PHONY: migrate-up
+migrate-up:
+	migrate -path $(SOURCE_DIR) -database $(POSTGRES_URI) up
+
+migrate-down:
+	migrate -path $(SOURCE_DIR) -database $(POSTGRES_URI) down

@@ -3,6 +3,7 @@ package order
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/kdv2001/onlySubscription/internal/domain/communication"
@@ -12,10 +13,10 @@ import (
 	"github.com/kdv2001/onlySubscription/pkg/parallel"
 )
 
-// StartOrderBackgroundOrders запускает фоновый процесс
-func (i *Implementation) StartOrderBackgroundOrders(ctx context.Context) error {
-	go parallel.BackgroundPeriodProcess(ctx, 5*time.Second, i.processingOrders)
-	go parallel.BackgroundPeriodProcess(ctx, 5*time.Second, i.cancelOrders)
+// RunBackgroundProcess запускает фоновый процесс
+func (i *Implementation) RunBackgroundProcess(ctx context.Context, wg *sync.WaitGroup) error {
+	go parallel.BackgroundPeriodProcess(ctx, wg, 5*time.Second, i.processingOrders)
+	go parallel.BackgroundPeriodProcess(ctx, wg, 5*time.Second, i.cancelOrders)
 	return nil
 
 }

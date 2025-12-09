@@ -18,34 +18,8 @@ type Implementation struct {
 	c *pgxpool.Pool
 }
 
-var usersTable = `create table if not exists users (	
-    id     uuid primary key,
-    state varchar NOT NULL
-)`
-
-var authBotTelegramTable = `create table if not exists auth_bot_telegram(
-    id            uuid primary key,
-    user_id       uuid NOT NULL, FOREIGN KEY (user_id)  REFERENCES users (id),
-    telegram_id   varchar NOT NULL UNIQUE,
-    created_at    timestamp WITHOUT TIME ZONE NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-    state         varchar NOT NULL,
-    chat_id       varchar NOT NULL)                       
-    `
-
-var tables = []string{
-	usersTable,
-	authBotTelegramTable,
-}
-
 // NewImplementation создает объект репо
-func NewImplementation(ctx context.Context, c *pgxpool.Pool) (*Implementation, error) {
-	for _, t := range tables {
-		_, err := c.Exec(ctx, t)
-		if err != nil {
-			return nil, nil
-		}
-	}
-
+func NewImplementation(c *pgxpool.Pool) (*Implementation, error) {
 	return &Implementation{
 		c: c,
 	}, nil

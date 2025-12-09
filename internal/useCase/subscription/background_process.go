@@ -3,6 +3,7 @@ package subscription
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/kdv2001/onlySubscription/internal/domain/communication"
@@ -13,8 +14,8 @@ import (
 )
 
 // RunBackgroundProcess запускает фоновые процессы
-func (i *Implementation) RunBackgroundProcess(ctx context.Context) error {
-	go parallel.BackgroundPeriodProcess(ctx, 20*time.Second, i.deactivateExpiredSubscription)
+func (i *Implementation) RunBackgroundProcess(ctx context.Context, wg *sync.WaitGroup) error {
+	go parallel.BackgroundPeriodProcess(ctx, wg, 20*time.Second, i.deactivateExpiredSubscription)
 	return nil
 }
 

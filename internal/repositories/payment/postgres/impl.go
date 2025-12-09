@@ -1,4 +1,4 @@
-package postgress
+package postgres
 
 import (
 	"context"
@@ -22,31 +22,7 @@ type Implementation struct {
 	conn *pgxpool.Pool
 }
 
-var paymentTable = `create table if not exists invoices
-(
-    id             uuid primary key            not null ,
-    state          varchar                     NOT NULL,
-    payment_method varchar                     NOT NULL,
-    created_at     timestamp WITHOUT TIME ZONE NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-    updated_at     timestamp WITHOUT TIME ZONE NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-    order_id       uuid                        NOT NULL,
-    amount         decimal                     NOT NULL,
-    currency       varchar                     NOT NULL,
-    provider_id    varchar
-)`
-
-var tables = []string{
-	paymentTable,
-}
-
-func NewImplementation(ctx context.Context, conn *pgxpool.Pool) (*Implementation, error) {
-	for _, t := range tables {
-		_, err := conn.Exec(ctx, t)
-		if err != nil {
-			return nil, err
-		}
-	}
-
+func NewImplementation(conn *pgxpool.Pool) (*Implementation, error) {
 	return &Implementation{
 		conn: conn,
 	}, nil

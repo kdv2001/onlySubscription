@@ -27,14 +27,7 @@ type Implementation struct {
 	conn *pgxpool.Pool
 }
 
-func NewImplementation(ctx context.Context, conn *pgxpool.Pool) (*Implementation, error) {
-	for _, t := range tables {
-		_, err := conn.Exec(ctx, t)
-		if err != nil {
-			return nil, err
-		}
-	}
-
+func NewImplementation(conn *pgxpool.Pool) (*Implementation, error) {
 	return &Implementation{
 		conn: conn,
 	}, nil
